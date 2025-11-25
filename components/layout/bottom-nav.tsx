@@ -74,7 +74,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+      <div className="flex items-center h-16 w-full max-w-screen-xl mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href ||
             (item.href !== '/' && pathname.startsWith(item.href));
@@ -84,7 +84,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'relative flex flex-col items-center gap-1 px-4 py-2 rounded-md transition-colors',
+                'relative flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md transition-colors h-full',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -93,7 +93,7 @@ export function BottomNav() {
               {isActive && (
                 <motion.div
                   layoutId="nav-pill"
-                  className="absolute inset-0 bg-primary/10 rounded-lg -z-10"
+                  className="absolute inset-x-2 inset-y-1 bg-primary/10 rounded-lg -z-10"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}
