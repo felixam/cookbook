@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout/header';
 import { BottomNav } from '@/components/layout/bottom-nav';
+import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
@@ -34,14 +34,14 @@ export default function SettingsPage() {
   async function handleModelChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newModel = e.target.value;
     setRecipeModel(newModel);
-    
+
     try {
       const res = await fetch('/api/settings/model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: newModel }),
       });
-      
+
       if (res.ok) {
         toast.success('Modell aktualisiert');
       } else {
@@ -140,13 +140,13 @@ export default function SettingsPage() {
                   onChange={handleModelChange}
                   disabled={modelLoading}
                 >
-                  <option value="openai/gpt-5">GPT-5 (Standard)</option>
+                  <option value="openai/gpt-5-mini">GPT-5 Mini</option>
                   <option value="google/gemini-3-pro">Google Gemini 3 Pro</option>
                   <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash</option>
                   <option value="anthropic/claude-4.5-sonnet">Anthropic Claude 4.5 Sonnet</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                 </div>
               </div>
             </div>

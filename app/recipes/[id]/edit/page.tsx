@@ -40,7 +40,7 @@ export default function EditRecipePage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header title="Laden..." showBack />
+        <Header title="Laden..." showBack backHref={`/recipes/${id}`} />
         <div className="p-4 space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="aspect-video w-full" />
@@ -63,7 +63,7 @@ export default function EditRecipePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header title="Rezept bearbeiten" showBack />
+      <Header title="Rezept bearbeiten" showBack backHref={`/recipes/${id}`} />
       <main className="p-4">
         <RecipeForm recipe={recipe} />
       </main>

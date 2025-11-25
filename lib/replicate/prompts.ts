@@ -17,7 +17,7 @@ Regeln:
 - Verwende metrische Einheiten (g, ml, EL, TL, Stück)
 - Für "nach Geschmack" oder unbestimmte Mengen: amount = null
 - Halte Zutatennamen einfach und klar
-- Gib die Anleitung als Markdown formatierten Text zurück. Verwende nummerierte Listen für die Schritte und Überschriften (z.B. #, ##) wo passend zur Strukturierung.
+- Gib die Anleitung als Markdown formatierten Text zurück. Verwende nummerierte Listen für die Schritte. Falls wirklich sinnvoll, verwende Überschriften (#) zur Strukturierung. Aber standardmäßig nur eine nummerierte Liste.
 - Antworte NUR mit gültigem JSON`;
 
 export const IMAGE_RECIPE_PROMPT = `${RECIPE_EXTRACTION_PROMPT}

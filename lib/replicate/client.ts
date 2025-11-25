@@ -1,6 +1,6 @@
+import type { Ingredient, RecipeInput } from '@/lib/types/recipe';
 import Replicate from 'replicate';
 import { IMAGE_RECIPE_PROMPT, URL_RECIPE_PROMPT } from './prompts';
-import type { RecipeInput, Ingredient } from '@/lib/types/recipe';
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -73,8 +73,8 @@ import { getSetting } from '../db/queries/settings';
 
 export async function extractRecipeFromImage(imageBase64: string): Promise<RecipeInput> {
   const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
-  
-  const model = await getSetting('recipe_model') || 'openai/gpt-5';
+
+  const model = await getSetting('recipe_model') || 'openai/gpt-5-mini';
 
   // Define input based on model
   const input: Record<string, unknown> = {
@@ -91,7 +91,7 @@ export async function extractRecipeFromImage(imageBase64: string): Promise<Recip
   } else {
     // Default (gpt-5) uses image_input array
     input.image_input = [imageUrl];
-    input.reasoning_effort = 'medium';
+    input.reasoning_effort = 'minimal';
   }
 
   const output = await replicate.run(model as `${string}/${string}`, { input });
@@ -102,9 +102,9 @@ export async function extractRecipeFromImage(imageBase64: string): Promise<Recip
 export async function extractRecipeFromText(content: string): Promise<RecipeInput> {
   // Truncate content if too long
   const truncatedContent = content.length > 10000 ? content.substring(0, 10000) : content;
-  
-  const model = await getSetting('recipe_model') || 'openai/gpt-5';
-  
+
+  const model = await getSetting('recipe_model') || 'openai/gpt-5-mini';
+
   const input: Record<string, unknown> = {
     prompt: `${URL_RECIPE_PROMPT}\n\n${truncatedContent}`,
   };
@@ -119,8 +119,8 @@ export async function extractRecipeFromText(content: string): Promise<RecipeInpu
 }
 
 export async function generateRecipeImage(title: string, ingredients: string[]): Promise<Buffer> {
-  const ingredientsList = ingredients.slice(0, 5).join(', ');
-  const prompt = `Professional food photography of "${title}" dish with ${ingredientsList}, appetizing, well-plated, natural lighting, shallow depth of field, top-down view`;
+  const ingredientsList = ingredients.slice(0, 12).join(', ');
+  const prompt = `Professional food photography of "${title}" dish with ${ingredientsList}, appetizing, well-plated on a wooden surface, some of the ingredients visible behind and around the dish, natural lighting, shallow depth of field, top-down view`;
 
   const output = await replicate.run('google/nano-banana', {
     input: {

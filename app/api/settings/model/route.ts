@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { getSetting, setSetting } from '@/lib/db/queries/settings';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
@@ -14,14 +14,14 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { model } = await req.json();
-    
+
     const validModels = [
-      'openai/gpt-5',
+      'openai/gpt-5-mini',
       'google/gemini-3-pro',
       'google/gemini-2.5-flash',
       'anthropic/claude-4.5-sonnet'
     ];
-    
+
     if (!validModels.includes(model)) {
       return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }

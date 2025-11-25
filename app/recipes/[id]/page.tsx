@@ -245,7 +245,7 @@ export default function RecipeDetailPage({ params }: PageProps) {
           </div>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">Zutaten</h2>
+            <h2 className="text-xl font-bold mb-3">Zutaten</h2>
             <ul className="space-y-2">
               {recipe.ingredients.map((ing, index) => (
                 <li key={ing.id || index} className="flex items-center gap-3">
@@ -292,9 +292,16 @@ export default function RecipeDetailPage({ params }: PageProps) {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">Zubereitung</h2>
+            <h2 className="text-xl font-bold mb-3">Zubereitung</h2>
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  h1: ({ node, ...props }) => <h1 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-base font-semibold mt-4 mb-3" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
+                  h4: ({ node, ...props }) => <h4 className="text-base font-medium mt-2 mb-1" {...props} />,
+                }}
+              >
                 {recipe.instructions}
               </ReactMarkdown>
             </div>
