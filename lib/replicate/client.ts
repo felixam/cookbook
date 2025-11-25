@@ -120,7 +120,7 @@ export async function extractRecipeFromText(content: string): Promise<RecipeInpu
 
 export async function generateRecipeImage(title: string, ingredients: string[]): Promise<Buffer> {
   const ingredientsList = ingredients.slice(0, 12).join(', ');
-  const prompt = `Professional food photography of "${title}" dish with ${ingredientsList}, appetizing, well-plated on a wooden surface, some of the ingredients visible behind and around the dish, natural lighting, shallow depth of field, top-down view`;
+  const prompt = `Professional food photography of "${title}" dish with ${ingredientsList}, appetizing, well-plated on a wooden surface, some of the ingredients visible behind and around the dish, natural lighting, shallow depth of field, isometric view`;
 
   const output = await replicate.run('google/nano-banana', {
     input: {

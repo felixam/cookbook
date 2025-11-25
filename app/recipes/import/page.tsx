@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RecipeForm } from '@/components/recipes/recipe-form';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ export default function ImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState('');
+  const [text, setText] = useState('');
   const [extractedRecipe, setExtractedRecipe] = useState<RecipeInput | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -139,6 +141,41 @@ export default function ImportPage() {
     }
   }
 
+  async function handleTextImport(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!text.trim()) {
+      toast.error('Bitte gib einen Text ein');
+      return;
+    }
+
+    setLoading(true);
+    setExtractedRecipe(null);
+    setPreviewImage(null);
+
+    try {
+      const res = await fetch('/api/import/text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Fehler beim Importieren');
+        return;
+      }
+
+      setExtractedRecipe(data.data);
+      toast.success('Rezept erkannt! Bitte überprüfe die Daten.');
+    } catch {
+      toast.error('Verbindungsfehler');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleRecipeCreated() {
     toast.success('Rezept gespeichert!');
     router.push('/');
@@ -149,6 +186,7 @@ export default function ImportPage() {
     setExtractedRecipe(null);
     setPreviewImage(null);
     setUrl('');
+    setText('');
   }
 
   // Show recipe form if we have extracted data
@@ -196,9 +234,10 @@ export default function ImportPage() {
 
       <main className="p-4">
         <Tabs defaultValue="image" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="image">Aus Bild</TabsTrigger>
             <TabsTrigger value="url">Von URL</TabsTrigger>
+            <TabsTrigger value="text">Aus Text</TabsTrigger>
           </TabsList>
 
           <TabsContent value="image" className="mt-6 space-y-4">
@@ -263,6 +302,35 @@ export default function ImportPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading || !url.trim()}>
+                {loading ? (
+                  <>
+                    <div className="animate-spin mr-2 w-4 h-4 border-2 border-background border-t-transparent rounded-full" />
+                    Wird importiert...
+                  </>
+                ) : (
+                  'Rezept importieren'
+                )}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="text" className="mt-6 space-y-4">
+            <form onSubmit={handleTextImport} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rezepttext</label>
+                <Textarea
+                  placeholder="Füge hier den Rezepttext ein..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  disabled={loading}
+                  rows={10}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Kopiere einen Rezepttext und füge ihn hier ein, um das Rezept automatisch zu extrahieren
+                </p>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading || !text.trim()}>
                 {loading ? (
                   <>
                     <div className="animate-spin mr-2 w-4 h-4 border-2 border-background border-t-transparent rounded-full" />
