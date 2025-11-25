@@ -294,16 +294,7 @@ export default function RecipeDetailPage({ params }: PageProps) {
           <section>
             <h2 className="text-lg font-semibold mb-3">Zubereitung</h2>
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown
-                components={{
-                  ol: ({ children }) => (
-                    <ol className="list-decimal list-outside ml-4 space-y-2">{children}</ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="pl-1">{children}</li>
-                  ),
-                }}
-              >
+              <ReactMarkdown>
                 {recipe.instructions}
               </ReactMarkdown>
             </div>

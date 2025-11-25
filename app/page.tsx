@@ -8,6 +8,7 @@ import { SearchBar } from '@/components/layout/search-bar';
 import { RecipeCard } from '@/components/recipes/recipe-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { MotionWrapper } from '@/components/ui/motion-wrapper';
 import type { RecipeListItem } from '@/lib/types/recipe';
 
 export default function HomePage() {
@@ -90,45 +91,47 @@ export default function HomePage() {
             ))}
           </div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-12">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="64"
-              height="64"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mx-auto mb-4 text-muted-foreground"
-            >
-              <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
-              <line x1="6" x2="18" y1="17" y2="17" />
-            </svg>
-            <h2 className="text-xl font-semibold mb-2">
-              {searchQuery ? 'Keine Rezepte gefunden' : 'Noch keine Rezepte'}
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery
-                ? 'Versuche einen anderen Suchbegriff'
-                : 'Erstelle dein erstes Rezept oder importiere eines'}
-            </p>
-            {!searchQuery && (
-              <div className="flex gap-2 justify-center">
-                <Link href="/recipes/new">
-                  <Button>Rezept erstellen</Button>
-                </Link>
-                <Link href="/recipes/import">
-                  <Button variant="outline">Importieren</Button>
-                </Link>
-              </div>
-            )}
-          </div>
+          <MotionWrapper>
+            <div className="text-center py-12">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mx-auto mb-4 text-muted-foreground"
+              >
+                <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+                <line x1="6" x2="18" y1="17" y2="17" />
+              </svg>
+              <h2 className="text-xl font-semibold mb-2">
+                {searchQuery ? 'Keine Rezepte gefunden' : 'Noch keine Rezepte'}
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery
+                  ? 'Versuche einen anderen Suchbegriff'
+                  : 'Erstelle dein erstes Rezept oder importiere eines'}
+              </p>
+              {!searchQuery && (
+                <div className="flex gap-2 justify-center">
+                  <Link href="/recipes/new">
+                    <Button>Rezept erstellen</Button>
+                  </Link>
+                  <Link href="/recipes/import">
+                    <Button variant="outline">Importieren</Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </MotionWrapper>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+            {recipes.map((recipe, index) => (
+              <RecipeCard key={recipe.id} recipe={recipe} index={index} />
             ))}
           </div>
         )}

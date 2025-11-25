@@ -9,7 +9,7 @@ Gib NUR gültiges JSON zurück, ohne zusätzlichen Text. Das JSON muss folgendes
     {"name": "Zutatname", "amount": 200, "unit": "g"},
     {"name": "Salz", "amount": null, "unit": "nach Geschmack"}
   ],
-  "instructions": "Schritt 1\\nSchritt 2\\nSchritt 3"
+  "instructions": "# Vorbereitung\\n1. Zwiebeln würfeln und anbraten\\n2. Knoblauch hinzufügen\\n\\n# Zubereitung\\n1. Mit Brühe ablöschen\\n2. 20 Minuten köcheln lassen"
 }
 
 Regeln:
@@ -17,8 +17,7 @@ Regeln:
 - Verwende metrische Einheiten (g, ml, EL, TL, Stück)
 - Für "nach Geschmack" oder unbestimmte Mengen: amount = null
 - Halte Zutatennamen einfach und klar
-- Gib die Anleitung als einzelne Schritte zurück, getrennt durch Zeilenumbrüche (\\n)
-- KEINE Nummerierung der Schritte, nur der Text pro Zeile
+- Gib die Anleitung als Markdown formatierten Text zurück. Verwende nummerierte Listen für die Schritte und Überschriften (z.B. #, ##) wo passend zur Strukturierung.
 - Antworte NUR mit gültigem JSON`;
 
 export const IMAGE_RECIPE_PROMPT = `${RECIPE_EXTRACTION_PROMPT}

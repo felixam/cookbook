@@ -21,15 +21,7 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
   const [error, setError] = useState('');
 
   const [title, setTitle] = useState(recipe?.title || '');
-  // Strip numbered list formatting for editing
-  const [instructions, setInstructions] = useState(() => {
-    if (!recipe?.instructions) return '';
-    return recipe.instructions
-      .split('\n')
-      .map((line) => line.replace(/^\d+[\.\)]\s*/, '').trim())
-      .filter((line) => line.length > 0)
-      .join('\n');
-  });
+  const [instructions, setInstructions] = useState(recipe?.instructions || '');
   const [servings, setServings] = useState(recipe?.servings || 4);
   const [sourceUrl, setSourceUrl] = useState(recipe?.sourceUrl || '');
   const [imageData, setImageData] = useState<string | null>(recipe?.imageData || null);
@@ -52,23 +44,9 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
       return;
     }
 
-    // Convert plain text lines to markdown numbered list
-    const formattedInstructions = instructions
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line, i) => {
-        // If line already starts with a number and dot/paren, keep it
-        if (/^\d+[\.\)]\s/.test(line)) {
-          return line.replace(/^\d+[\.\)]\s*/, `${i + 1}. `);
-        }
-        return `${i + 1}. ${line}`;
-      })
-      .join('\n');
-
     const data: RecipeInput = {
       title: title.trim(),
-      instructions: formattedInstructions,
+      instructions: instructions.trim(),
       servings,
       sourceUrl: sourceUrl.trim() || null,
       imageData,
@@ -143,11 +121,11 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
       <div className="space-y-2">
         <Label htmlFor="instructions">Zubereitung</Label>
         <p className="text-sm text-muted-foreground">
-          Schreibe jeden Schritt in eine neue Zeile. Die Nummerierung erfolgt automatisch.
+          Verwende Markdown für Formatierungen (z.B. # für Überschriften, - für Listen).
         </p>
         <Textarea
           id="instructions"
-          placeholder={"Zwiebeln würfeln und anbraten\nKnoblauch hinzufügen\nMit Brühe ablöschen\n..."}
+          placeholder={"# Vorbereitung\nZwiebeln würfeln...\n\n# Zubereitung\nAlles anbraten..."}
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
           rows={8}

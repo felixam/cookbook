@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const navItems = [
   {
@@ -72,7 +73,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t safe-area-bottom">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href ||
@@ -83,14 +84,26 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center gap-1 px-4 py-2 rounded-md transition-colors',
+                'relative flex flex-col items-center gap-1 px-4 py-2 rounded-md transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              {item.icon}
-              <span className="text-xs">{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="nav-pill"
+                  className="absolute inset-0 bg-primary/10 rounded-lg -z-10"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <motion.div
+                animate={{ scale: isActive ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                {item.icon}
+              </motion.div>
+              <span className="text-xs font-medium">{item.label}</span>
             </Link>
           );
         })}
