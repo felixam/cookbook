@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
 
   // Allow public paths
   if (publicPaths.some((path) => pathname.startsWith(path))) {
-    return NextResponse.next();
+    return NextResponse.next({ request });
   }
 
   // Check for session cookie
@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
 
   try {
     await jwtVerify(token, secret);
-    return NextResponse.next();
+    return NextResponse.next({ request });
   } catch {
     // Invalid token - redirect to login
     if (pathname.startsWith('/api/')) {

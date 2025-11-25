@@ -67,16 +67,34 @@ function parseRecipeResponse(output: unknown): RecipeInput {
   };
 }
 
+import { getSetting } from '../db/queries/settings';
+
+// ... existing code ...
+
 export async function extractRecipeFromImage(imageBase64: string): Promise<RecipeInput> {
   const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
+  
+  const model = await getSetting('recipe_model') || 'openai/gpt-5';
 
-  const output = await replicate.run('openai/gpt-5', {
-    input: {
-      prompt: IMAGE_RECIPE_PROMPT,
-      image_input: [imageUrl],
-      reasoning_effort: 'medium',
-    },
-  });
+  // Define input based on model
+  const input: Record<string, unknown> = {
+    prompt: IMAGE_RECIPE_PROMPT,
+  };
+
+  if (model === 'anthropic/claude-4.5-sonnet') {
+    // Claude uses 'image' (string) and max_tokens
+    input.image = imageUrl;
+    input.max_tokens = 2048;
+  } else if (model.startsWith('google/gemini')) {
+    // Gemini expects 'images' (array)
+    input.images = [imageUrl];
+  } else {
+    // Default (gpt-5) uses image_input array
+    input.image_input = [imageUrl];
+    input.reasoning_effort = 'medium';
+  }
+
+  const output = await replicate.run(model as `${string}/${string}`, { input });
 
   return parseRecipeResponse(output);
 }
@@ -84,12 +102,18 @@ export async function extractRecipeFromImage(imageBase64: string): Promise<Recip
 export async function extractRecipeFromText(content: string): Promise<RecipeInput> {
   // Truncate content if too long
   const truncatedContent = content.length > 10000 ? content.substring(0, 10000) : content;
+  
+  const model = await getSetting('recipe_model') || 'openai/gpt-5';
+  
+  const input: Record<string, unknown> = {
+    prompt: `${URL_RECIPE_PROMPT}\n\n${truncatedContent}`,
+  };
 
-  const output = await replicate.run('openai/gpt-5', {
-    input: {
-      prompt: `${URL_RECIPE_PROMPT}\n\n${truncatedContent}`,
-    },
-  });
+  if (model === 'anthropic/claude-4.5-sonnet') {
+    input.max_tokens = 2048;
+  }
+
+  const output = await replicate.run(model as `${string}/${string}`, { input });
 
   return parseRecipeResponse(output);
 }
