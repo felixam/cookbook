@@ -2,9 +2,10 @@ import { Pool, QueryResult, QueryResultRow } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URI,
-  max: 20,
+  max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
+  keepAlive: true,
 });
 
 export async function query<T extends QueryResultRow>(
