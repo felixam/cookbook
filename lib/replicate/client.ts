@@ -122,7 +122,9 @@ export async function generateRecipeImage(title: string, ingredients: string[]):
   const ingredientsList = ingredients.slice(0, 12).join(', ');
   const prompt = `Professional food photography of "${title}" dish with ${ingredientsList}, appetizing, well-plated on a wooden surface, some of the ingredients visible behind and around the dish, natural lighting, shallow depth of field, isometric view`;
 
-  const output = await replicate.run('google/nano-banana', {
+  const imageModel = await getSetting('image_model') || 'google/nano-banana';
+
+  const output = await replicate.run(imageModel as `${string}/${string}`, {
     input: {
       prompt,
       aspect_ratio: '16:9',

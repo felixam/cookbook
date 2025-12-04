@@ -17,6 +17,8 @@ export default function SettingsPage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [recipeModel, setRecipeModel] = useState('');
   const [modelLoading, setModelLoading] = useState(true);
+  const [imageModel, setImageModel] = useState('');
+  const [imageModelLoading, setImageModelLoading] = useState(true);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -27,6 +29,14 @@ export default function SettingsPage() {
       })
       .catch(console.error)
       .finally(() => setModelLoading(false));
+
+    fetch('/api/settings/image-model')
+      .then(res => res.json())
+      .then(data => {
+        if (data.model) setImageModel(data.model);
+      })
+      .catch(console.error)
+      .finally(() => setImageModelLoading(false));
   }, []);
 
   async function handleModelChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -42,6 +52,27 @@ export default function SettingsPage() {
 
       if (res.ok) {
         toast.success('Modell aktualisiert');
+      } else {
+        toast.error('Fehler beim Speichern');
+      }
+    } catch {
+      toast.error('Verbindungsfehler');
+    }
+  }
+
+  async function handleImageModelChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newModel = e.target.value;
+    setImageModel(newModel);
+
+    try {
+      const res = await fetch('/api/settings/image-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: newModel }),
+      });
+
+      if (res.ok) {
+        toast.success('Bildmodell aktualisiert');
       } else {
         toast.error('Fehler beim Speichern');
       }
@@ -140,6 +171,35 @@ export default function SettingsPage() {
                   <option value="google/gemini-3-pro">Google Gemini 3 Pro</option>
                   <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash</option>
                   <option value="anthropic/claude-4.5-sonnet">Anthropic Claude 4.5 Sonnet</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Bildgenerierung</CardTitle>
+            <CardDescription>
+              Wähle das KI-Modell für die Bildgenerierung
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="imageModel">Modell</Label>
+              <div className="relative">
+                <select
+                  id="imageModel"
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                  value={imageModel}
+                  onChange={handleImageModelChange}
+                  disabled={imageModelLoading}
+                >
+                  <option value="google/nano-banana">Nano Banana</option>
+                  <option value="google/nano-banana-pro">Nano Banana Pro</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
