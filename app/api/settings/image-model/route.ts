@@ -24,7 +24,10 @@ export async function POST(req: Request) {
 
     const validModels = [
       'google/nano-banana',
-      'google/nano-banana-pro'
+      'google/nano-banana-pro',
+      'black-forest-labs/flux-schnell',
+      'bytedance/seedream-4',
+      'ideogram-ai/ideogram-v3-turbo'
     ];
 
     if (!validModels.includes(model)) {

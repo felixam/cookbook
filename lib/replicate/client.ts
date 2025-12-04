@@ -132,13 +132,30 @@ export async function generateRecipeImage(title: string, ingredients: string[]):
   if (imageModel === 'google/nano-banana-pro') {
     input.resolution = '1K';
     input.output_format = 'jpg';
+  } else if (imageModel === 'black-forest-labs/flux-schnell') {
+    input.output_format = 'webp';
+  } else if (imageModel === 'ideogram-ai/ideogram-v3-turbo') {
+    input.style_type = 'Realistic';
   }
 
-  const output = await replicate.run(imageModel as `${string}/${string}`, { input });
+  const rawOutput = await replicate.run(imageModel as `${string}/${string}`, { input });
+
+  // Many models return an array of outputs - take the first one
+  const output = Array.isArray(rawOutput) && rawOutput.length > 0 ? rawOutput[0] : rawOutput;
 
   // Output is a FileOutput object - can be used directly as a Buffer
   if (output instanceof Buffer) {
     return output;
+  }
+
+  // If it's a string URL, fetch it
+  if (typeof output === 'string' && output.startsWith('http')) {
+    const response = await fetch(output);
+    if (!response.ok) {
+      throw new Error('Failed to fetch generated image');
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   // If it's a FileOutput with url() method
@@ -150,11 +167,6 @@ export async function generateRecipeImage(title: string, ingredients: string[]):
     }
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
-  }
-
-  // If it's already array-like (can be written to file directly)
-  if (output && typeof output === 'object') {
-    return Buffer.from(output as ArrayBuffer);
   }
 
   throw new Error('Unexpected output format from image generation model');
