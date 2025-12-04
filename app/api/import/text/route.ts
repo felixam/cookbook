@@ -16,13 +16,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (text.trim().length < 50) {
-      return NextResponse.json(
-        { error: 'Text ist zu kurz. Bitte gib mehr Rezeptdetails ein.' },
-        { status: 400 }
-      );
-    }
-
     // Extract recipe using AI
     const recipe = await extractRecipeFromText(text);
 
