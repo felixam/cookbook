@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
@@ -19,6 +19,9 @@ export default function SettingsPage() {
   const [modelLoading, setModelLoading] = useState(true);
   const [imageModel, setImageModel] = useState('');
   const [imageModelLoading, setImageModelLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -146,6 +149,66 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/export');
+      if (!res.ok) {
+        toast.error('Fehler beim Exportieren');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rezepte-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Export erfolgreich');
+    } catch {
+      toast.error('Verbindungsfehler');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        toast.error(error.error || 'Fehler beim Importieren');
+        return;
+      }
+
+      const result = await res.json();
+      toast.success(`${result.imported} Rezept(e) importiert, ${result.skipped} übersprungen`);
+    } catch {
+      toast.error('Ungültige Datei');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <main className="p-4 space-y-4">
@@ -257,6 +320,36 @@ export default function SettingsPage() {
                 {loading ? 'Speichern...' : 'PIN ändern'}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Daten</CardTitle>
+            <CardDescription>
+              Exportiere oder importiere deine Rezepte
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3">
+              <Button onClick={handleExport} disabled={exporting} variant="outline">
+                {exporting ? 'Exportieren...' : 'Rezepte exportieren'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                variant="outline"
+              >
+                {importing ? 'Importieren...' : 'Rezepte importieren'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

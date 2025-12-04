@@ -210,3 +210,50 @@ export async function deleteRecipe(id: string): Promise<boolean> {
   const result = await query('DELETE FROM recipes_recipes WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;
 }
+
+export async function getAllRecipesWithIngredients(): Promise<Recipe[]> {
+  const recipesResult = await query<RecipeRow>(
+    `SELECT id, title, instructions, servings, image_data, source_url, created_at, updated_at
+     FROM recipes_recipes ORDER BY created_at DESC`
+  );
+
+  const recipes: Recipe[] = [];
+
+  for (const row of recipesResult.rows) {
+    const ingredientsResult = await query<IngredientRow>(
+      `SELECT id, recipe_id, name, amount, unit, sort_order
+       FROM recipes_ingredients WHERE recipe_id = $1 ORDER BY sort_order`,
+      [row.id]
+    );
+
+    const ingredients: Ingredient[] = ingredientsResult.rows.map((ing) => ({
+      id: ing.id,
+      name: ing.name,
+      amount: ing.amount ? parseFloat(ing.amount) : null,
+      unit: ing.unit,
+      sortOrder: ing.sort_order,
+    }));
+
+    recipes.push({
+      id: row.id,
+      title: row.title,
+      instructions: row.instructions,
+      servings: row.servings,
+      imageData: row.image_data,
+      sourceUrl: row.source_url,
+      ingredients,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    });
+  }
+
+  return recipes;
+}
+
+export async function recipeExistsByTitle(title: string): Promise<boolean> {
+  const result = await query<{ exists: boolean }>(
+    `SELECT EXISTS(SELECT 1 FROM recipes_recipes WHERE LOWER(title) = LOWER($1)) as exists`,
+    [title]
+  );
+  return result.rows[0].exists;
+}
