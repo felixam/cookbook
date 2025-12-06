@@ -259,11 +259,11 @@ export default function RecipeDetailPage({ params }: PageProps) {
             <h2 className="text-xl font-bold mb-3">Zutaten</h2>
             <ul className="space-y-2">
               {recipe.ingredients.map((ing, index) => (
-                <li key={ing.id || index} className="flex items-center gap-3">
+                <li key={ing.id || index} className="flex items-start gap-3">
                   <button
                     type="button"
                     onClick={() => toggleIngredient(index)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    className={`w-6 h-6 flex-shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
                       checkedIngredients.has(index)
                         ? 'bg-primary border-primary text-primary-foreground'
                         : 'border-muted-foreground'
