@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Shell } from "@/components/layout/shell";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
 const geist = Geist({
@@ -44,10 +45,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" data-scroll-behavior="smooth">
+    <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${geist.variable} font-sans antialiased`}>
-        <Shell>{children}</Shell>
-        <Toaster position="top-center" />
+        <ThemeProvider>
+          <Shell>{children}</Shell>
+          <Toaster position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );

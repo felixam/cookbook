@@ -36,6 +36,13 @@ npm run lint     # Run ESLint
 - Instructions stored as markdown numbered lists (auto-formatted on save)
 - Ingredients have optional amount/unit fields
 
+**Theming**:
+- Uses `next-themes` for Light/Dark/System theme switching
+- Theme stored in localStorage (per-device preference)
+- All UI elements must include `dark:` Tailwind variants for dark mode support
+- CSS variables defined in `app/globals.css` with `.dark` class selector
+- ThemeProvider wraps the app in `app/layout.tsx`
+
 ### Environment Variables
 ```
 DATABASE_URI=
