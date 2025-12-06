@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import { Copy, Share2 } from 'lucide-react';
 import type { Recipe } from '@/lib/types/recipe';
 
 interface PageProps {
@@ -32,6 +33,11 @@ export default function RecipeDetailPage({ params }: PageProps) {
   const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
   const [displayServings, setDisplayServings] = useState<number | null>(null);
   const [savingServings, setSavingServings] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && !!navigator.share);
+  }, []);
 
   useEffect(() => {
     async function fetchRecipe() {
@@ -81,6 +87,33 @@ export default function RecipeDetailPage({ params }: PageProps) {
       }
       return next;
     });
+  }
+
+  function getIngredientsText(): string {
+    if (!recipe) return '';
+    return recipe.ingredients
+      .filter((_, index) => !checkedIngredients.has(index))
+      .map(ing => {
+        const amount = formatAmount(ing.amount, ing.unit);
+        return amount ? `${amount} ${ing.name}` : ing.name;
+      })
+      .join('\n');
+  }
+
+  async function shareIngredients() {
+    if (!recipe) return;
+    try {
+      await navigator.share({ title: recipe.title, text: getIngredientsText() });
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        toast.error('Teilen fehlgeschlagen');
+      }
+    }
+  }
+
+  async function copyIngredients() {
+    await navigator.clipboard.writeText(getIngredientsText());
+    toast.success('In Zwischenablage kopiert');
   }
 
   // Calculate the multiplier for servings adjustment
@@ -256,7 +289,27 @@ export default function RecipeDetailPage({ params }: PageProps) {
 
 
           <section>
-            <h2 className="text-xl font-bold mb-3">Zutaten</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xl font-bold mr-1">Zutaten</h2>
+              <button
+                type="button"
+                onClick={copyIngredients}
+                className="p-1.5 rounded-full hover:bg-accent transition-colors text-muted-foreground"
+                title="Zutaten kopieren"
+              >
+                <Copy className="w-[18px] h-[18px]" />
+              </button>
+              {canShare && (
+                <button
+                  type="button"
+                  onClick={shareIngredients}
+                  className="p-1.5 rounded-full hover:bg-accent transition-colors text-muted-foreground"
+                  title="Zutaten teilen"
+                >
+                  <Share2 className="w-[18px] h-[18px]" />
+                </button>
+              )}
+            </div>
             <ul className="space-y-2">
               {recipe.ingredients.map((ing, index) => (
                 <li key={ing.id || index} className="flex items-center gap-3">
