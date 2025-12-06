@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const { url } = await request.json();
+    const { url, strict } = await request.json();
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     // Extract recipe using AI
-    const recipe = await extractRecipeFromText(content);
+    const recipe = await extractRecipeFromText(content, strict === true);
 
     // Add source URL to the recipe
     recipe.sourceUrl = parsedUrl.toString();

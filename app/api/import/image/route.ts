@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const { image } = await request.json();
+    const { image, strict } = await request.json();
 
     if (!image || typeof image !== 'string') {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const recipe = await extractRecipeFromImage(image);
+    const recipe = await extractRecipeFromImage(image, strict === true);
 
     return NextResponse.json({
       success: true,

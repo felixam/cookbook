@@ -71,27 +71,33 @@ import { getSetting } from '../db/queries/settings';
 
 // ... existing code ...
 
-export async function extractRecipeFromImage(imageBase64: string): Promise<RecipeInput> {
+export async function extractRecipeFromImage(imageBase64: string, strict: boolean = false): Promise<RecipeInput> {
   const imageUrl = imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
 
   const model = await getSetting('recipe_model') || 'openai/gpt-5-mini';
 
   // Define input based on model
   const input: Record<string, unknown> = {
-    prompt: IMAGE_RECIPE_PROMPT,
+    prompt: IMAGE_RECIPE_PROMPT(strict),
   };
 
-  if (model === 'anthropic/claude-4.5-sonnet') {
+  if (model === 'openai/gpt-5-mini') {
+    // gpt-5 mini uses image_input array
+    input.image_input = [imageUrl];
+    input.reasoning_effort = 'minimal';
+  } else if (model === 'openai/gpt-5') {
+    // gpt-5 uses image_input array
+    input.image_input = [imageUrl];
+    input.reasoning_effort = 'minimal';
+  } else if (model === 'anthropic/claude-4.5-sonnet') {
     // Claude uses 'image' (string) and max_tokens
     input.image = imageUrl;
     input.max_tokens = 2048;
-  } else if (model.startsWith('google/gemini')) {
+  } else if (model === 'google/gemini-3-pro') {
     // Gemini expects 'images' (array)
     input.images = [imageUrl];
-  } else {
-    // Default (gpt-5) uses image_input array
-    input.image_input = [imageUrl];
-    input.reasoning_effort = 'minimal';
+  } else if (model === 'google/gemini-2.5-flash') {
+    input.images = [imageUrl];
   }
 
   const output = await replicate.run(model as `${string}/${string}`, { input });
@@ -99,19 +105,24 @@ export async function extractRecipeFromImage(imageBase64: string): Promise<Recip
   return parseRecipeResponse(output);
 }
 
-export async function extractRecipeFromText(content: string): Promise<RecipeInput> {
+export async function extractRecipeFromText(content: string, strict: boolean = false): Promise<RecipeInput> {
   // Truncate content if too long
   const truncatedContent = content.length > 10000 ? content.substring(0, 10000) : content;
 
   const model = await getSetting('recipe_model') || 'openai/gpt-5-mini';
 
   const input: Record<string, unknown> = {
-    prompt: `${URL_RECIPE_PROMPT}\n\n${truncatedContent}`,
+    prompt: `${URL_RECIPE_PROMPT(strict)}\n\n${truncatedContent}`,
   };
 
-  if (model === 'anthropic/claude-4.5-sonnet') {
+  if (model === 'openai/gpt-5-mini') {
+    input.reasoning_effort = 'minimal';
+  } else if (model === 'openai/gpt-5') {
+    input.reasoning_effort = 'minimal';
+  } else if (model === 'anthropic/claude-4.5-sonnet') {
     input.max_tokens = 2048;
   }
+  // google/gemini-3-pro and google/gemini-2.5-flash use defaults
 
   const output = await replicate.run(model as `${string}/${string}`, { input });
 

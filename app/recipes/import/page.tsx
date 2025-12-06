@@ -58,6 +58,7 @@ export default function ImportPage() {
   const [text, setText] = useState('');
   const [extractedRecipe, setExtractedRecipe] = useState<RecipeInput | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [strict, setStrict] = useState(false);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -78,7 +79,7 @@ export default function ImportPage() {
       const res = await fetch('/api/import/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: compressed }),
+        body: JSON.stringify({ image: compressed, strict }),
       });
 
       const data = await res.json();
@@ -120,7 +121,7 @@ export default function ImportPage() {
       const res = await fetch('/api/import/url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: url.trim(), strict }),
       });
 
       const data = await res.json();
@@ -155,7 +156,7 @@ export default function ImportPage() {
       const res = await fetch('/api/import/text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim() }),
+        body: JSON.stringify({ text: text.trim(), strict }),
       });
 
       const data = await res.json();
@@ -268,6 +269,18 @@ export default function ImportPage() {
               onChange={handleImageUpload}
               disabled={loading}
             />
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={strict}
+                onChange={(e) => setStrict(e.target.checked)}
+                className="w-4 h-4 rounded border-input"
+              />
+              <span className="text-sm text-muted-foreground">
+                Ursprüngliche Formulierungen beibehalten
+              </span>
+            </label>
           </TabsContent>
 
           <TabsContent value="url" className="mt-6 space-y-4">
@@ -285,6 +298,18 @@ export default function ImportPage() {
                   Füge die URL einer Rezeptseite ein, um das Rezept automatisch zu importieren
                 </p>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={strict}
+                  onChange={(e) => setStrict(e.target.checked)}
+                  className="w-4 h-4 rounded border-input"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Ursprüngliche Formulierungen beibehalten
+                </span>
+              </label>
 
               <Button type="submit" className="w-full" disabled={loading || !url.trim()}>
                 {loading ? (
@@ -314,6 +339,18 @@ export default function ImportPage() {
                   Kopiere einen Rezepttext und füge ihn hier ein, um das Rezept automatisch zu extrahieren
                 </p>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={strict}
+                  onChange={(e) => setStrict(e.target.checked)}
+                  className="w-4 h-4 rounded border-input"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Ursprüngliche Formulierungen beibehalten
+                </span>
+              </label>
 
               <Button type="submit" className="w-full" disabled={loading || !text.trim()}>
                 {loading ? (
