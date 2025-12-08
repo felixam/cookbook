@@ -239,6 +239,7 @@ export default function SettingsPage() {
                   disabled={modelLoading}
                 >
                   <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+                  <option value="openai/gpt-5">GPT-5</option>
                   <option value="google/gemini-3-pro">Google Gemini 3 Pro</option>
                   <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash</option>
                   <option value="anthropic/claude-4.5-sonnet">Anthropic Claude 4.5 Sonnet</option>

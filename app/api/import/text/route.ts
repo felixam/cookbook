@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const { text } = await request.json();
+    const { text, strict } = await request.json();
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Extract recipe using AI
-    const recipe = await extractRecipeFromText(text);
+    const recipe = await extractRecipeFromText(text, strict === true);
 
     return NextResponse.json({
       success: true,

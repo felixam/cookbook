@@ -24,6 +24,7 @@ export async function POST(req: Request) {
 
     const validModels = [
       'openai/gpt-5-mini',
+      'openai/gpt-5',
       'google/gemini-3-pro',
       'google/gemini-2.5-flash',
       'anthropic/claude-4.5-sonnet'
