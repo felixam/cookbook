@@ -137,6 +137,20 @@ export default function RecipeDetailPage({ params }: PageProps) {
     setDisplayServings(newValue);
   }
 
+  function halfServings() {
+    if (!recipe) return;
+    const current = displayServings ?? recipe.servings;
+    if (current % 2 === 0 && current > 1) {
+      setDisplayServings(current / 2);
+    }
+  }
+
+  function doubleServings() {
+    if (!recipe) return;
+    const current = displayServings ?? recipe.servings;
+    setDisplayServings(current * 2);
+  }
+
   async function saveAdjustedServings() {
     if (!recipe || !displayServings || displayServings === recipe.servings) return;
 
@@ -230,8 +244,16 @@ export default function RecipeDetailPage({ params }: PageProps) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={halfServings}
+                  className="w-8 h-8 rounded-full border border-input flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={(displayServings ?? recipe.servings) % 2 !== 0 || (displayServings ?? recipe.servings) <= 1}
+                >
+                  <span className="text-sm font-medium">½</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => adjustServings(-1)}
-                  className="w-8 h-8 rounded-full border border-input flex items-center justify-center hover:bg-accent transition-colors"
+                  className="w-8 h-8 rounded-full border border-input flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={(displayServings ?? recipe.servings) <= 1}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -250,6 +272,13 @@ export default function RecipeDetailPage({ params }: PageProps) {
                     <path d="M5 12h14" />
                     <path d="M12 5v14" />
                   </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={doubleServings}
+                  className="w-8 h-8 rounded-full border border-input flex items-center justify-center hover:bg-accent transition-colors"
+                >
+                  <span className="text-sm font-medium">2×</span>
                 </button>
               </div>
               {displayServings && displayServings !== recipe.servings && (
