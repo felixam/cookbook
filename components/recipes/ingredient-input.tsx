@@ -1,29 +1,148 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { Reorder, useDragControls } from 'framer-motion';
+import { GripVertical } from 'lucide-react';
+import isEqual from 'fast-deep-equal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Ingredient } from '@/lib/types/recipe';
 import { isValidAmount } from '@/lib/utils/amount';
 import { cn } from '@/lib/utils';
 
+type IngredientBase = Omit<Ingredient, 'id' | 'sortOrder'>;
+type IngredientWithId = IngredientBase & { _id: string };
+
 interface IngredientInputProps {
-  ingredients: Omit<Ingredient, 'id' | 'sortOrder'>[];
-  onChange: (ingredients: Omit<Ingredient, 'id' | 'sortOrder'>[]) => void;
+  ingredients: IngredientBase[];
+  onChange: (ingredients: IngredientBase[]) => void;
+}
+
+function addIds(ingredients: IngredientBase[]): IngredientWithId[] {
+  return ingredients.map((ing) => ({ ...ing, _id: crypto.randomUUID() }));
+}
+
+function stripIds(ingredients: IngredientWithId[]): IngredientBase[] {
+  return ingredients.map(({ _id: _, ...rest }) => rest);
+}
+
+interface IngredientRowProps {
+  ingredient: IngredientWithId;
+  onUpdate: (id: string, field: keyof IngredientBase, value: string | null) => void;
+  onRemove: (id: string) => void;
+  isAmountInvalid: (amount: string | null) => boolean;
+}
+
+function IngredientRow({ ingredient, onUpdate, onRemove, isAmountInvalid }: IngredientRowProps) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={ingredient}
+      dragListener={false}
+      dragControls={controls}
+      className="flex gap-2 items-start bg-background"
+    >
+      <div
+        className="cursor-grab active:cursor-grabbing shrink-0 text-muted-foreground py-2 touch-none"
+        onPointerDown={(e) => controls.start(e)}
+      >
+        <GripVertical size={18} />
+      </div>
+      <Input
+        placeholder="Menge"
+        type="text"
+        inputMode="decimal"
+        className={cn(
+          'w-20',
+          isAmountInvalid(ingredient.amount) && 'border-destructive focus-visible:ring-destructive'
+        )}
+        value={ingredient.amount ?? ''}
+        onChange={(e) => onUpdate(ingredient._id, 'amount', e.target.value || null)}
+      />
+      <Input
+        placeholder="Einheit"
+        className="w-20"
+        value={ingredient.unit ?? ''}
+        onChange={(e) => onUpdate(ingredient._id, 'unit', e.target.value || null)}
+      />
+      <Input
+        placeholder="Zutat (z.B. Mehl)"
+        className="flex-1"
+        value={ingredient.name}
+        onChange={(e) => onUpdate(ingredient._id, 'name', e.target.value)}
+        required
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="shrink-0 text-destructive hover:text-destructive"
+        onClick={() => onRemove(ingredient._id)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 6h18" />
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        </svg>
+      </Button>
+    </Reorder.Item>
+  );
 }
 
 export function IngredientInput({ ingredients, onChange }: IngredientInputProps) {
+  const [items, setItems] = useState<IngredientWithId[]>(() => addIds(ingredients));
+  const lastEmittedRef = useRef<IngredientBase[]>(ingredients);
+
+  // Sync when parent changes ingredients (e.g., AI extraction)
+  // Guard condition prevents cascading renders - only updates on external changes
+  useEffect(() => {
+    if (!isEqual(ingredients, lastEmittedRef.current)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setItems(addIds(ingredients));
+      lastEmittedRef.current = ingredients;
+    }
+  }, [ingredients]);
+
+  function emitChange(newItems: IngredientWithId[]) {
+    const stripped = stripIds(newItems);
+    lastEmittedRef.current = stripped;
+    onChange(stripped);
+  }
+
   function addIngredient() {
-    onChange([...ingredients, { name: '', amount: null, unit: null }]);
+    const newItems = [...items, { name: '', amount: null, unit: null, _id: crypto.randomUUID() }];
+    setItems(newItems);
+    emitChange(newItems);
   }
 
-  function removeIngredient(index: number) {
-    onChange(ingredients.filter((_, i) => i !== index));
+  function removeIngredient(id: string) {
+    const newItems = items.filter((item) => item._id !== id);
+    setItems(newItems);
+    emitChange(newItems);
   }
 
-  function updateIngredient(index: number, field: keyof Omit<Ingredient, 'id' | 'sortOrder'>, value: string | null) {
-    const updated = [...ingredients];
-    updated[index] = { ...updated[index], [field]: value };
-    onChange(updated);
+  function updateIngredient(id: string, field: keyof IngredientBase, value: string | null) {
+    const newItems = items.map((item) =>
+      item._id === id ? { ...item, [field]: value } : item
+    );
+    setItems(newItems);
+    emitChange(newItems);
+  }
+
+  function handleReorder(newItems: IngredientWithId[]) {
+    setItems(newItems);
+    emitChange(newItems);
   }
 
   function isAmountInvalid(amount: string | null): boolean {
@@ -39,69 +158,23 @@ export function IngredientInput({ ingredients, onChange }: IngredientInputProps)
         </Button>
       </div>
 
-      {ingredients.length === 0 && (
+      {items.length === 0 && (
         <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
           Noch keine Zutaten. Klicke auf &quot;+ Zutat&quot; um eine hinzuzufügen.
         </p>
       )}
 
-      <div className="space-y-2">
-        {ingredients.map((ingredient, index) => (
-          <div key={index} className="flex gap-2 items-start">
-            <Input
-              placeholder="Menge"
-              type="text"
-              inputMode="decimal"
-              className={cn(
-                'w-20',
-                isAmountInvalid(ingredient.amount) && 'border-destructive focus-visible:ring-destructive'
-              )}
-              value={ingredient.amount ?? ''}
-              onChange={(e) =>
-                updateIngredient(index, 'amount', e.target.value || null)
-              }
-            />
-            <Input
-              placeholder="Einheit"
-              className="w-20"
-              value={ingredient.unit ?? ''}
-              onChange={(e) =>
-                updateIngredient(index, 'unit', e.target.value || null)
-              }
-            />
-            <Input
-              placeholder="Zutat (z.B. Mehl)"
-              className="flex-1"
-              value={ingredient.name}
-              onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-              required
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-destructive hover:text-destructive"
-              onClick={() => removeIngredient(index)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-              </svg>
-            </Button>
-          </div>
+      <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="space-y-2">
+        {items.map((ingredient) => (
+          <IngredientRow
+            key={ingredient._id}
+            ingredient={ingredient}
+            onUpdate={updateIngredient}
+            onRemove={removeIngredient}
+            isAmountInvalid={isAmountInvalid}
+          />
         ))}
-      </div>
+      </Reorder.Group>
     </div>
   );
 }
