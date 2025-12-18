@@ -62,7 +62,7 @@ function IngredientRow({ ingredient, onUpdate, onRemove, isAmountInvalid }: Ingr
         type="text"
         inputMode="decimal"
         className={cn(
-          'w-20',
+          'w-[72px] sm:w-20',
           isAmountInvalid(ingredient.amount) && 'border-destructive focus-visible:ring-destructive'
         )}
         value={ingredient.amount ?? ''}
@@ -70,7 +70,7 @@ function IngredientRow({ ingredient, onUpdate, onRemove, isAmountInvalid }: Ingr
       />
       <Input
         placeholder="Einheit"
-        className="w-20"
+        className="w-[72px] sm:w-20"
         value={ingredient.unit ?? ''}
         onChange={(e) => onUpdate(ingredient._id, 'unit', e.target.value || null)}
       />

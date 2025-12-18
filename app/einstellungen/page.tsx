@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { useFontScale, type FontScale } from '@/components/providers/font-scale-provider';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { fontScale, setFontScale } = useFontScale();
   const [mounted, setMounted] = useState(false);
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -305,6 +307,36 @@ export default function SettingsPage() {
                   <option value="system">System</option>
                   <option value="light">Hell</option>
                   <option value="dark">Dunkel</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Schriftgröße</CardTitle>
+            <CardDescription>
+              Passe die Textgröße an
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="fontScale">Größe</Label>
+              <div className="relative">
+                <select
+                  id="fontScale"
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                  value={mounted ? fontScale : '1'}
+                  onChange={(e) => setFontScale(e.target.value as FontScale)}
+                  disabled={!mounted}
+                >
+                  <option value="1">Normal (100%)</option>
+                  <option value="1.1">Groß (110%)</option>
+                  <option value="1.2">Sehr groß (120%)</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>

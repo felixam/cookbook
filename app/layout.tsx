@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Shell } from "@/components/layout/shell";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { FontScaleProvider } from "@/components/providers/font-scale-provider";
 import "./globals.css";
 
 const geist = Geist({
@@ -48,8 +49,10 @@ export default function RootLayout({
     <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${geist.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <Shell>{children}</Shell>
-          <Toaster position="top-center" />
+          <FontScaleProvider>
+            <Shell>{children}</Shell>
+            <Toaster position="top-center" />
+          </FontScaleProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -239,7 +239,7 @@ export default function RecipeDetailPage({ params }: PageProps) {
             </div>
           </div>
           <div> {/* This is the new wrapper div */}
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
               <span className="text-muted-foreground">Portionen:</span>
               <div className="flex items-center gap-2">
                 <button
@@ -282,7 +282,7 @@ export default function RecipeDetailPage({ params }: PageProps) {
                 </button>
               </div>
               {displayServings && displayServings !== recipe.servings && (
-                <>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setDisplayServings(null)}
@@ -294,11 +294,11 @@ export default function RecipeDetailPage({ params }: PageProps) {
                     type="button"
                     onClick={saveAdjustedServings}
                     disabled={savingServings}
-                    className="ml-auto text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {savingServings ? 'Speichern...' : 'Speichern'}
                   </button>
-                </>
+                </div>
               )}
             </div>
             {recipe.sourceUrl && (
