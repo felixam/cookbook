@@ -235,7 +235,6 @@ export function ImageUpload({ value, onChange, title, ingredients }: ImageUpload
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFileChange}
       />
