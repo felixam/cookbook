@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import { Copy, Share2 } from 'lucide-react';
+import { TagBadge } from '@/components/tags/tag-badge';
 import type { Recipe } from '@/lib/types/recipe';
 import { scaleAmount } from '@/lib/utils/amount';
 
@@ -172,6 +173,7 @@ export default function RecipeDetailPage({ params }: PageProps) {
           sourceUrl: recipe.sourceUrl,
           imageData: recipe.imageData,
           ingredients: adjustedIngredients,
+          tagIds: recipe.tags?.map((t) => t.id) || [],
         }),
       });
 
@@ -238,7 +240,16 @@ export default function RecipeDetailPage({ params }: PageProps) {
               </Button>
             </div>
           </div>
-          <div> {/* This is the new wrapper div */}
+
+          {recipe.tags && recipe.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {recipe.tags.map((tag) => (
+                <TagBadge key={tag.id} tag={tag} size="sm" />
+              ))}
+            </div>
+          )}
+
+          <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
               <span className="text-muted-foreground">Portionen:</span>
               <div className="flex items-center gap-2">

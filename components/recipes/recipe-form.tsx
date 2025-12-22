@@ -1,10 +1,11 @@
 'use client';
 
+import { TagSelector } from '@/components/tags/tag-selector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Ingredient, Recipe, RecipeInput } from '@/lib/types/recipe';
+import type { Ingredient, Recipe, RecipeInput, Tag } from '@/lib/types/recipe';
 import { cn } from '@/lib/utils';
 import { isValidAmount } from '@/lib/utils/amount';
 import { useRouter } from 'next/navigation';
@@ -44,6 +45,7 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
       { name: '', amount: null, unit: null },
     ]
   );
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(recipe?.tags || []);
   const [changedFields, setChangedFields] = useState<ChangedFields>({
     title: false,
     servings: false,
@@ -81,6 +83,7 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
       sourceUrl: sourceUrl.trim() || null,
       imageData,
       ingredients: validIngredients,
+      tagIds: selectedTags.map((t) => t.id),
     };
 
     try {
@@ -132,6 +135,11 @@ export function RecipeForm({ recipe, onSubmit }: RecipeFormProps) {
           required
         />
       </div>
+
+      <TagSelector
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+      />
 
       <ImageUpload
         value={imageData}

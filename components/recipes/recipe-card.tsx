@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
+import { TagBadge } from '@/components/tags/tag-badge';
 import type { RecipeListItem } from '@/lib/types/recipe';
 import { motion } from 'framer-motion';
 import { Clock, Users } from 'lucide-react';
@@ -59,6 +60,18 @@ export function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
             <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
               {recipe.title}
             </h3>
+            {recipe.tags && recipe.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {recipe.tags.slice(0, 3).map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} size="sm" />
+                ))}
+                {recipe.tags.length > 3 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{recipe.tags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
               <Clock size={12} />
               <span>

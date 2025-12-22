@@ -1,28 +1,54 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import { SearchBar } from '@/components/layout/search-bar';
 import { RecipeCard } from '@/components/recipes/recipe-card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TagFilter } from '@/components/tags/tag-filter';
 import { Button } from '@/components/ui/button';
 import { MotionWrapper } from '@/components/ui/motion-wrapper';
-import type { RecipeListItem } from '@/lib/types/recipe';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getCachedRecipes, setCachedRecipes } from '@/lib/cache/recipes';
+import type { RecipeListItem } from '@/lib/types/recipe';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
-export default function HomePage() {
-  const cachedData = getCachedRecipes('');
+function HomePageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL params
+  const initialQuery = searchParams.get('q') || '';
+  const initialTags = searchParams.get('tags');
+  const initialTagIds = initialTags
+    ? initialTags.split(',').map((id) => parseInt(id, 10)).filter((id) => !isNaN(id))
+    : [];
+
+  // Check cache for initial query
+  const cacheKey = initialQuery || '';
+  const cachedData = getCachedRecipes(cacheKey);
   const [recipes, setRecipes] = useState<RecipeListItem[]>(cachedData ?? []);
   const [loading, setLoading] = useState(cachedData === null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds);
   const currentQueryRef = useRef('');
 
-  const fetchRecipes = useCallback(async (query?: string, isBackgroundFetch = false) => {
+  // Update URL when filters change
+  const updateUrl = useCallback((query: string, tagIds: number[]) => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (tagIds.length > 0) params.set('tags', tagIds.join(','));
+    const newUrl = params.toString() ? `/?${params}` : '/';
+    router.replace(newUrl, { scroll: false });
+  }, [router]);
+
+  const fetchRecipes = useCallback(async (query?: string, tagIds?: number[], isBackgroundFetch = false) => {
     const queryKey = query ?? '';
     currentQueryRef.current = queryKey;
-
     try {
-      const url = query ? `/api/recipes?q=${encodeURIComponent(query)}` : '/api/recipes';
+      const params = new URLSearchParams();
+      if (query) params.set('q', query);
+      if (tagIds && tagIds.length > 0) params.set('tags', tagIds.join(','));
+      const url = params.toString() ? `/api/recipes?${params}` : '/api/recipes';
       const res = await fetch(url);
       if (res.ok) {
         const data: RecipeListItem[] = await res.json();
@@ -44,55 +70,64 @@ export default function HomePage() {
     }
   }, []);
 
+  // Fetch on mount with URL params
   useEffect(() => {
     // If we have cached data, do a background fetch to check for updates
     // Otherwise, show loading and fetch
     if (cachedData !== null) {
-      fetchRecipes(undefined, true);
+      fetchRecipes(initialQuery || undefined, initialTagIds.length > 0 ? initialTagIds : undefined, true);
     } else {
-      fetchRecipes();
+      fetchRecipes(initialQuery || undefined, initialTagIds.length > 0 ? initialTagIds : undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle search query changes with debounce
   useEffect(() => {
     const debounce = setTimeout(() => {
-      const cachedForQuery = getCachedRecipes(searchQuery);
+      const cacheKey = searchQuery || '';
+      const cachedForQuery = getCachedRecipes(cacheKey);
 
-      if (cachedForQuery !== null) {
-        // Show cached data immediately
+      if (cachedForQuery !== null && selectedTagIds.length === 0) {
+        // Show cached data immediately (only if no tag filters)
         setRecipes(cachedForQuery);
         setLoading(false);
         // Background fetch to check for updates
-        fetchRecipes(searchQuery || undefined, true);
-      } else if (searchQuery !== '') {
-        // No cache, need to fetch with loading
-        setLoading(true);
-        fetchRecipes(searchQuery);
+        fetchRecipes(searchQuery || undefined, selectedTagIds.length > 0 ? selectedTagIds : undefined, true);
       } else {
-        // Empty query - check cache
-        const cachedAll = getCachedRecipes('');
-        if (cachedAll !== null) {
-          setRecipes(cachedAll);
-          setLoading(false);
-          fetchRecipes(undefined, true);
-        } else {
-          fetchRecipes();
+        // Need to fetch (either no cache or tag filters applied)
+        if (selectedTagIds.length === 0) {
+          setLoading(true);
         }
+        fetchRecipes(searchQuery || undefined, selectedTagIds.length > 0 ? selectedTagIds : undefined);
       }
+      updateUrl(searchQuery, selectedTagIds);
     }, 300);
 
     return () => clearTimeout(debounce);
-  }, [searchQuery, fetchRecipes]);
+  }, [searchQuery, selectedTagIds, fetchRecipes, updateUrl]);
+
+  // Handle tag changes
+  function handleTagsChange(tagIds: number[]) {
+    setSelectedTagIds(tagIds);
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <main className="p-4 space-y-4">
-        <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Rezept suchen..."
-        />
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Rezept suchen..."
+            />
+          </div>
+          <TagFilter
+            selectedTagIds={selectedTagIds}
+            onTagsChange={handleTagsChange}
+          />
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -123,14 +158,14 @@ export default function HomePage() {
                 <line x1="6" x2="18" y1="17" y2="17" />
               </svg>
               <h2 className="text-xl font-semibold mb-2">
-                {searchQuery ? 'Keine Rezepte gefunden' : 'Noch keine Rezepte'}
+                {searchQuery || selectedTagIds.length > 0 ? 'Keine Rezepte gefunden' : 'Noch keine Rezepte'}
               </h2>
               <p className="text-muted-foreground mb-4">
-                {searchQuery
-                  ? 'Versuche einen anderen Suchbegriff'
+                {searchQuery || selectedTagIds.length > 0
+                  ? 'Versuche einen anderen Suchbegriff oder Filter'
                   : 'Erstelle dein erstes Rezept oder importiere eines'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && selectedTagIds.length === 0 && (
                 <div className="flex gap-2 justify-center">
                   <Link href="/recipes/new">
                     <Button>Rezept erstellen</Button>
@@ -151,5 +186,31 @@ export default function HomePage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <main className="p-4 space-y-4">
+          <div className="flex gap-2">
+            <Skeleton className="flex-1 h-9" />
+            <Skeleton className="h-9 w-9" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-video w-full" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/4" />
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    }>
+      <HomePageContent />
+    </Suspense>
   );
 }

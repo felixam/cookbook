@@ -206,6 +206,7 @@ export default function ImportPage() {
                 id: i,
                 sortOrder: i,
               })),
+              tags: [],
               createdAt: new Date(),
               updatedAt: new Date(),
             }}

@@ -10,8 +10,12 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || undefined;
+    const tagsParam = searchParams.get('tags');
+    const tagIds = tagsParam
+      ? tagsParam.split(',').map((id) => parseInt(id, 10)).filter((id) => !isNaN(id))
+      : undefined;
 
-    const recipes = await getAllRecipes(query);
+    const recipes = await getAllRecipes(query, tagIds);
     return NextResponse.json(recipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
@@ -58,6 +62,7 @@ export async function POST(request: Request) {
       imageData: body.imageData || null,
       sourceUrl: body.sourceUrl || null,
       ingredients: body.ingredients.filter((ing) => ing.name && ing.name.trim()),
+      tagIds: body.tagIds || [],
     });
 
     return NextResponse.json(recipe, { status: 201 });

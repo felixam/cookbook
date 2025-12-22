@@ -1,5 +1,5 @@
 import { query, getClient } from '../connection';
-import type { Recipe, RecipeInput, RecipeListItem, Ingredient } from '@/lib/types/recipe';
+import type { Recipe, RecipeInput, RecipeListItem, Ingredient, Tag, TagColor } from '@/lib/types/recipe';
 
 interface RecipeRow {
   id: string;
@@ -21,28 +21,98 @@ interface IngredientRow {
   sort_order: number;
 }
 
-export async function getAllRecipes(searchQuery?: string): Promise<RecipeListItem[]> {
+interface TagRow {
+  id: number;
+  name: string;
+  color: string;
+}
+
+function rowToTag(row: TagRow): Tag {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color as TagColor,
+  };
+}
+
+async function getTagsForRecipe(recipeId: string): Promise<Tag[]> {
+  const result = await query<TagRow>(
+    `SELECT t.id, t.name, t.color
+     FROM recipes_tags t
+     INNER JOIN recipes_recipe_tags rt ON t.id = rt.tag_id
+     WHERE rt.recipe_id = $1
+     ORDER BY t.name`,
+    [recipeId]
+  );
+  return result.rows.map(rowToTag);
+}
+
+async function getTagsForRecipes(recipeIds: string[]): Promise<Map<string, Tag[]>> {
+  if (recipeIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = recipeIds.map((_, i) => `$${i + 1}`).join(', ');
+  const result = await query<TagRow & { recipe_id: string }>(
+    `SELECT t.id, t.name, t.color, rt.recipe_id
+     FROM recipes_tags t
+     INNER JOIN recipes_recipe_tags rt ON t.id = rt.tag_id
+     WHERE rt.recipe_id IN (${placeholders})
+     ORDER BY t.name`,
+    recipeIds
+  );
+
+  const tagsByRecipe = new Map<string, Tag[]>();
+  for (const row of result.rows) {
+    const tags = tagsByRecipe.get(row.recipe_id) || [];
+    tags.push(rowToTag(row));
+    tagsByRecipe.set(row.recipe_id, tags);
+  }
+
+  return tagsByRecipe;
+}
+
+export async function getAllRecipes(searchQuery?: string, tagIds?: number[]): Promise<RecipeListItem[]> {
   let sql = `
-    SELECT id, title, image_data, servings, created_at
-    FROM recipes_recipes
+    SELECT DISTINCT r.id, r.title, r.image_data, r.servings, r.created_at
+    FROM recipes_recipes r
   `;
-  const params: string[] = [];
+  const params: (string | number)[] = [];
+  const conditions: string[] = [];
+
+  if (tagIds && tagIds.length > 0) {
+    // Filter for recipes that have ANY of the selected tags
+    sql += ` INNER JOIN recipes_recipe_tags rt ON r.id = rt.recipe_id`;
+    const placeholders = tagIds.map((_, i) => `$${params.length + i + 1}`).join(', ');
+    conditions.push(`rt.tag_id IN (${placeholders})`);
+    params.push(...tagIds);
+  }
 
   if (searchQuery && searchQuery.trim()) {
-    sql += ` WHERE to_tsvector('german', title) @@ plainto_tsquery('german', $1)
-             OR title ILIKE $2`;
+    conditions.push(
+      `(to_tsvector('german', r.title) @@ plainto_tsquery('german', $${params.length + 1})
+       OR r.title ILIKE $${params.length + 2})`
+    );
     params.push(searchQuery.trim(), `%${searchQuery.trim()}%`);
   }
 
-  sql += ` ORDER BY created_at DESC`;
+  if (conditions.length > 0) {
+    sql += ` WHERE ${conditions.join(' AND ')}`;
+  }
+
+  sql += ` ORDER BY r.created_at DESC`;
 
   const result = await query<RecipeRow>(sql, params);
+
+  const recipeIds = result.rows.map((r) => r.id);
+  const tagsByRecipe = await getTagsForRecipes(recipeIds);
 
   return result.rows.map((row) => ({
     id: row.id,
     title: row.title,
     imageData: row.image_data,
     servings: row.servings,
+    tags: tagsByRecipe.get(row.id) || [],
     createdAt: row.created_at,
   }));
 }
@@ -74,6 +144,8 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     sortOrder: ing.sort_order,
   }));
 
+  const tags = await getTagsForRecipe(id);
+
   return {
     id: row.id,
     title: row.title,
@@ -82,6 +154,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     imageData: row.image_data,
     sourceUrl: row.source_url,
     ingredients,
+    tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -121,6 +194,27 @@ export async function createRecipe(input: RecipeInput): Promise<Recipe> {
       });
     }
 
+    // Insert tags
+    const tags: Tag[] = [];
+    if (input.tagIds && input.tagIds.length > 0) {
+      for (const tagId of input.tagIds) {
+        await client.query(
+          `INSERT INTO recipes_recipe_tags (recipe_id, tag_id) VALUES ($1, $2)`,
+          [recipe.id, tagId]
+        );
+      }
+      // Fetch the tags to return
+      const tagsResult = await client.query<TagRow>(
+        `SELECT t.id, t.name, t.color
+         FROM recipes_tags t
+         INNER JOIN recipes_recipe_tags rt ON t.id = rt.tag_id
+         WHERE rt.recipe_id = $1
+         ORDER BY t.name`,
+        [recipe.id]
+      );
+      tags.push(...tagsResult.rows.map(rowToTag));
+    }
+
     await client.query('COMMIT');
 
     return {
@@ -131,6 +225,7 @@ export async function createRecipe(input: RecipeInput): Promise<Recipe> {
       imageData: recipe.image_data,
       sourceUrl: recipe.source_url,
       ingredients,
+      tags,
       createdAt: recipe.created_at,
       updatedAt: recipe.updated_at,
     };
@@ -185,6 +280,29 @@ export async function updateRecipe(id: string, input: RecipeInput): Promise<Reci
       });
     }
 
+    // Delete existing tags and re-insert
+    await client.query('DELETE FROM recipes_recipe_tags WHERE recipe_id = $1', [id]);
+
+    const tags: Tag[] = [];
+    if (input.tagIds && input.tagIds.length > 0) {
+      for (const tagId of input.tagIds) {
+        await client.query(
+          `INSERT INTO recipes_recipe_tags (recipe_id, tag_id) VALUES ($1, $2)`,
+          [recipe.id, tagId]
+        );
+      }
+      // Fetch the tags to return
+      const tagsResult = await client.query<TagRow>(
+        `SELECT t.id, t.name, t.color
+         FROM recipes_tags t
+         INNER JOIN recipes_recipe_tags rt ON t.id = rt.tag_id
+         WHERE rt.recipe_id = $1
+         ORDER BY t.name`,
+        [recipe.id]
+      );
+      tags.push(...tagsResult.rows.map(rowToTag));
+    }
+
     await client.query('COMMIT');
 
     return {
@@ -195,6 +313,7 @@ export async function updateRecipe(id: string, input: RecipeInput): Promise<Reci
       imageData: recipe.image_data,
       sourceUrl: recipe.source_url,
       ingredients,
+      tags,
       createdAt: recipe.created_at,
       updatedAt: recipe.updated_at,
     };
@@ -216,6 +335,9 @@ export async function getAllRecipesWithIngredients(): Promise<Recipe[]> {
     `SELECT id, title, instructions, servings, image_data, source_url, created_at, updated_at
      FROM recipes_recipes ORDER BY created_at DESC`
   );
+
+  const recipeIds = recipesResult.rows.map((r) => r.id);
+  const tagsByRecipe = await getTagsForRecipes(recipeIds);
 
   const recipes: Recipe[] = [];
 
@@ -242,6 +364,7 @@ export async function getAllRecipesWithIngredients(): Promise<Recipe[]> {
       imageData: row.image_data,
       sourceUrl: row.source_url,
       ingredients,
+      tags: tagsByRecipe.get(row.id) || [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     });

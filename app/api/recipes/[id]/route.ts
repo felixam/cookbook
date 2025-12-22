@@ -69,6 +69,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       imageData: body.imageData || null,
       sourceUrl: body.sourceUrl || null,
       ingredients: body.ingredients.filter((ing) => ing.name && ing.name.trim()),
+      tagIds: body.tagIds || [],
     });
 
     if (!recipe) {

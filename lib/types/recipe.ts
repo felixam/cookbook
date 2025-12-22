@@ -1,3 +1,29 @@
+export type TagColor =
+  | 'gray'
+  | 'red'
+  | 'orange'
+  | 'amber'
+  | 'yellow'
+  | 'green'
+  | 'emerald'
+  | 'cyan'
+  | 'blue'
+  | 'purple'
+  | 'pink';
+
+export interface Tag {
+  id: number;
+  name: string;
+  color: TagColor;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface TagInput {
+  name: string;
+  color: TagColor;
+}
+
 export interface Ingredient {
   id?: number;
   name: string;
@@ -14,6 +40,7 @@ export interface Recipe {
   imageData: string | null;
   sourceUrl: string | null;
   ingredients: Ingredient[];
+  tags: Tag[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +52,7 @@ export interface RecipeInput {
   imageData?: string | null;
   sourceUrl?: string | null;
   ingredients: Omit<Ingredient, 'id' | 'sortOrder'>[];
+  tagIds?: number[];
 }
 
 export interface RecipeListItem {
@@ -32,5 +60,6 @@ export interface RecipeListItem {
   title: string;
   imageData: string | null;
   servings: number;
+  tags: Tag[];
   createdAt: Date;
 }
